@@ -37,8 +37,15 @@ class TaskListManager:
 
             print(f"Error details: {error_content}")
 
-    def get_tasklist(self, tasklist_ID):
+    def get_tasklist(self, tl_id):
         """Get TaskList object based on task list ID."""
+
+        if tl_id in self.all_task_lists:
+            print(f"Task list: {self.all_task_lists[tl_id].tl_title}")
+            return self.all_task_lists[tl_id]
+
+        else:
+            print("Task list ID doesn't exist.")
 
     def get_all_tasklist(self):
         """
@@ -53,7 +60,7 @@ class TaskListManager:
             for tasklist in tasklists_items:
                 tasklist_ID = tasklist["id"]
                 tasklist_title = tasklist["title"]
-                tl = TaskList(tasklist_ID, tasklist_title)
+                tl = TaskList(tasklist_title, tasklist_ID)
                 self.all_task_lists[tasklist["id"]] = tl
 
         except HttpError as http_err:
@@ -87,9 +94,9 @@ class TaskListManager:
                 return self.create_tasklist(tl_title)
 
             case "g":
+                self.print_tasklists()
                 task_list_id = input("Enter Task List ID: ")
-                task_id = input("Enter Task ID: ")
-                return self.get_tasklist(task_list_id, task_id)
+                return self.get_tasklist(task_list_id)
 
             case "d":
                 # delete
@@ -120,6 +127,7 @@ class TaskListManager:
             return self.get_task_list_action()
 
     def task_list_api_call(self):
+        # Load the first time so when the script gets called it's filled with existing tasklists inside the dict
         load = self.get_all_tasklist()
         task_list = self.get_details(self.get_task_list_action())
         return task_list
