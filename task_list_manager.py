@@ -39,7 +39,6 @@ class TaskListManager:
 
     def get_tasklist(self, tasklist_ID):
         """Get TaskList object based on task list ID."""
-        pass
 
     def get_all_tasklist(self):
         """
@@ -68,10 +67,12 @@ class TaskListManager:
             print(f"Error details: {error_content}")
 
     def print_tasklists(self):
+        print(ps.divider)
+        print("***LIST ALL TASK LIST***")
         print(ps.divider + ps.newline)
         counter = 1
         for tasklist in self.all_task_lists.values():
-            print(f"{counter}. {tasklist.title} --- {tasklist.ID}")
+            print(f"{counter}. {tasklist.tl_title} --- {tasklist.tl_id}")
             counter += 1
         print(ps.newline + ps.divider + ps.newline)
 
@@ -95,6 +96,9 @@ class TaskListManager:
                 # if success return print("successfully deleted task")
                 pass
 
+            case "p":
+                self.print_tasklists()
+
     def get_task_list_action(self):
         '''
         Get the action (Task List: Create, Get, Delete)
@@ -104,17 +108,18 @@ class TaskListManager:
         print(ps.divider + ps.newline)
 
         print(
-            f"1. Create task list (type 'c'){ps.newline}2. Get task list (type 'g'){ps.newline}3. Delete task list(type 'd'){ps.newline*2}* Enter your action: ")
+            f"1. Create task list (type 'c'){ps.newline}2. Get task list (type 'g'){ps.newline}3. Delete task list(type 'd'){ps.newline}4. Print all task lists(type 'p'){ps.newline*2}* Enter your action: ")
         print(ps.newline + ps.divider)
 
         user_action = input().strip()
 
-        if user_action in ['c', 'g', 'd']:
+        if user_action in ['c', 'g', 'd', 'p']:
             return user_action
         else:
             print("Invalid action. Please try again.")
             return self.get_task_list_action()
 
     def task_list_api_call(self):
+        load = self.get_all_tasklist()
         task_list = self.get_details(self.get_task_list_action())
         return task_list
