@@ -25,14 +25,3 @@ class TaskList:
         Print all tasks under this task list.
         '''
         pass
-
-    def convert_to_dict(self):
-        """
-        Convert into Dictionary for API interaction
-        """
-        tl_dict = {
-            "id": self.tl_id,
-            "title": self.tl_title,
-        }
-
-        return tl_dict

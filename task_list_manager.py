@@ -15,7 +15,27 @@ class TaskListManager:
 
     def create_tasklist(self, tl_title):
         """Create a new Task List."""
-        new_tl = TaskList(tl_title)
+        try:
+            tl_body = {'title': tl_title}
+            response = self.task_list_service.tasklist.insert(
+                body=tl_body).execute()
+
+            new_tl = TaskList(response["id"], response["title"])
+            self.all_task_lists[new_tl] = new_tl
+
+            print(ps.divider)
+            print("Successfully created task list.")
+            print(ps.divider + ps.newline)
+
+        except HttpError as http_err:
+            # Capture and print detailed HTTP error information
+            error_content = http_err.content.decode(
+                "utf-8") if http_err.content else "No content"
+
+            print(
+                f"HttpError occurred: Status code: {http_err.resp.status}, Reason: {http_err.resp.reason}")
+
+            print(f"Error details: {error_content}")
 
     def get_tasklist(self, tasklist_ID):
         """Get TaskList object based on task list ID."""
@@ -37,8 +57,15 @@ class TaskListManager:
                 tl = TaskList(tasklist_ID, tasklist_title)
                 self.all_task_lists[tasklist["id"]] = tl
 
-        except Exception as e:
-            print(f"An error occurred: {e}")
+        except HttpError as http_err:
+            # Capture and print detailed HTTP error information
+            error_content = http_err.content.decode(
+                "utf-8") if http_err.content else "No content"
+
+            print(
+                f"HttpError occurred: Status code: {http_err.resp.status}, Reason: {http_err.resp.reason}")
+
+            print(f"Error details: {error_content}")
 
     def print_tasklists(self):
         print(ps.divider + ps.newline)
@@ -56,12 +83,12 @@ class TaskListManager:
         match action:
             case "c":
                 tl_title = input("Enter task list title: ")
-                return self.create_task(tl_title)
+                return self.create_tasklist(tl_title)
 
             case "g":
                 task_list_id = input("Enter Task List ID: ")
                 task_id = input("Enter Task ID: ")
-                return self.get_task(task_list_id, task_id)
+                return self.get_tasklist(task_list_id, task_id)
 
             case "d":
                 # delete

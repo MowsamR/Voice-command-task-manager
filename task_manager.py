@@ -10,12 +10,16 @@ class TaskManager:
     def create_task(self, task_list_id, title, notes=None, due_date=None):
         """Create a new task in a specific task list."""
         # TO_DO:CHANGE THE Task_list_id and set it to task ID
-        new_task = Task(None, title, notes,
-                        due_date)  # Task ID will be set after API call
-        response = self.task_service.tasks().insert(
-            task_list_id, new_task.to_dict()).execute()
+        try:
+            new_task = Task(None, title, notes,
+                            due_date)  # Task ID will be set after API call
+            response = self.task_service.tasks().insert(
+                task_list_id, new_task.to_dict()).execute()
 
-        new_task.id = response["id"]
+            new_task.id = response["id"]
+        except Exception as e:
+            # Handle errors and provide feedback
+            print(f"Failed to create task: {e}")
 
         return new_task
 
