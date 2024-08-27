@@ -17,7 +17,7 @@ class TaskListManager:
         """Create a new Task List."""
         try:
             tl_body = {'title': tl_title}
-            response = self.task_list_service.tasklist.insert(
+            response = self.task_list_service.tasklists().insert(
                 body=tl_body).execute()
 
             new_tl = TaskList(response["id"], response["title"])
