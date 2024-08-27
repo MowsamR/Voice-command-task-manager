@@ -1,6 +1,7 @@
 from tasks import Task
 from datetime import datetime
 from print_string import PrintStrings as ps
+from googleapiclient.errors import HttpError
 
 
 class TaskManager:
@@ -17,16 +18,20 @@ class TaskManager:
                 task_list_id, new_task.to_dict()).execute()
 
             new_task.id = response["id"]
-        except Exception as e:
-            # Handle errors and provide feedback
-            print(f"Failed to create task: {e}")
-
+        except HttpError as http_err:
+            self.handle_http_error(http_err)
         return new_task
 
     def get_task(self, task_list_id, task_id):
         """Fetch a single task by ID."""
-        response = self.google_tasks_client.get_task(task_list_id, task_id)
-        return Task(response['id'], response['title'], response.get('notes'), response.get('due'))
+        try:
+            response = self.google_tasks_client.get_task(task_list_id, task_id)
+            task = Task(response['id'], response['title'],
+                        response.get('notes'), response.get('due'))
+        except HttpError as http_err:
+            self.handle_http_error(http_err)
+
+        return
 
     def get_details(self, action: str):
         """
@@ -74,25 +79,13 @@ class TaskManager:
             print("Invalid action. Please try again.")
             return self.get_task_action()
 
+    def handle_http_error(self, http_err):
+        error_content = http_err.content.decode(
+            "utf-8") if http_err.content else "No content"
+        print(
+            f"HttpError occurred: Status code: {http_err.resp.status}, Reason: {http_err.resp.reason}")
+        print(f"Error details: {error_content}")
+
     def task_api_call(self):
         task = self.get_details(self.get_task_action())
         return task
-    # def display_task(self, task_id):
-
-    #     try:
-    #         # Retrieve all tasks from the specified task list
-    #         result = self.service.tasks().list(tasklist=tasklist_id).execute()
-    #         tasks = result.get('items', [])
-
-    #         if not tasks:
-    #             print("No tasks found.")
-    #         else:
-    #             print(DIVIDER)
-    #             print("Tasks:")
-    #             print(DIVIDER)
-
-    #             for task in tasks:
-    #                 print(f"Task ID: {task['id']}, Title: {task['title']}")
-
-    #     except Exception as e:
-    #         print(f"An error occurred: {e}")

@@ -21,21 +21,14 @@ class TaskListManager:
                 body=tl_body).execute()
 
             new_tl = TaskList(response["id"], response["title"])
-            self.all_task_lists[new_tl] = new_tl
+            self.all_task_lists[new_tl.tl_id] = new_tl
 
             print(ps.divider)
             print("Successfully created task list.")
             print(ps.divider + ps.newline)
 
         except HttpError as http_err:
-            # Capture and print detailed HTTP error information
-            error_content = http_err.content.decode(
-                "utf-8") if http_err.content else "No content"
-
-            print(
-                f"HttpError occurred: Status code: {http_err.resp.status}, Reason: {http_err.resp.reason}")
-
-            print(f"Error details: {error_content}")
+            self.handle_http_error(http_err)
 
     def get_tasklist(self, tl_id):
         """Get TaskList object based on task list ID."""
@@ -64,14 +57,7 @@ class TaskListManager:
                 self.all_task_lists[tasklist["id"]] = tl
 
         except HttpError as http_err:
-            # Capture and print detailed HTTP error information
-            error_content = http_err.content.decode(
-                "utf-8") if http_err.content else "No content"
-
-            print(
-                f"HttpError occurred: Status code: {http_err.resp.status}, Reason: {http_err.resp.reason}")
-
-            print(f"Error details: {error_content}")
+            self.handle_http_error(http_err)
 
     def print_tasklists(self):
         print(ps.divider)
@@ -125,6 +111,13 @@ class TaskListManager:
         else:
             print("Invalid action. Please try again.")
             return self.get_task_list_action()
+
+    def handle_http_error(self, http_err):
+        error_content = http_err.content.decode(
+            "utf-8") if http_err.content else "No content"
+        print(
+            f"HttpError occurred: Status code: {http_err.resp.status}, Reason: {http_err.resp.reason}")
+        print(f"Error details: {error_content}")
 
     def task_list_api_call(self):
         # Load the first time so when the script gets called it's filled with existing tasklists inside the dict
