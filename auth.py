@@ -1,5 +1,6 @@
 import os
 import os.path
+import json
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -14,26 +15,37 @@ SCOPES = ['https://www.googleapis.com/auth/tasks',
 
 def get_credentials():
     credentials = None
+
+    # Check if the token file exists and try to load it
     if os.path.exists(token_path):
-        # These credentials are required to access API calls
-        credentials = Credentials.from_authorized_user_file(
-            token_path, SCOPES)
-        print("Token exists and is valid.")
+        try:
+            credentials = Credentials.from_authorized_user_file(
+                token_path, SCOPES)
+            print("Token exists.")
+        except (ValueError, json.JSONDecodeError) as e:
+            print(f"Corrupted token file, deleting it: {e}")
+            os.remove(token_path)
+            credentials = None
 
-    # if credentials is missing or isn't valid:
+    # If the token is invalid or missing, handle re-authentication
     if not credentials or not credentials.valid:
-        # if the credential that exists has expired, refresh the credentials
         if credentials and credentials.expired and credentials.refresh_token:
-            credentials.refresh(Request())
+            try:
+                credentials.refresh(Request())
+            except Exception as e:
+                print(f"Error refreshing token: {e}")
+                # Delete the expired token and force re-authentication
+                if os.path.exists(token_path):
+                    os.remove(token_path)
+                credentials = None  # Reset credentials to trigger new login
 
-        # If it doesn't exist, you need to log in.
-        else:
+        if not credentials:
+            # Trigger new authentication flow
             flow = InstalledAppFlow.from_client_secrets_file(
                 client_secret_path, SCOPES)
             credentials = flow.run_local_server(port=0)
-
-        # save the credential to token.json so that it can be reused
-        with open(token_path, "w") as token:
-            token.write(credentials.to_json())
+            # Save the new credentials
+            with open(token_path, "w") as token:
+                token.write(credentials.to_json())
 
     return credentials
