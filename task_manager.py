@@ -2,6 +2,7 @@ from tasks import Task
 from datetime import datetime
 from print_string import PrintStrings as ps
 from googleapiclient.errors import HttpError
+from tasklist import TaskList
 
 
 class TaskManager:
@@ -20,6 +21,7 @@ class TaskManager:
             new_task.id = response["id"]
         except HttpError as http_err:
             self.handle_http_error(http_err)
+
         return new_task
 
     def get_task(self, task_list_id, task_id):
@@ -78,6 +80,47 @@ class TaskManager:
         else:
             print("Invalid action. Please try again.")
             return self.get_task_action()
+
+    def refresh_missing_tasks(self, tasklist: TaskList):
+        """
+        Shows all the tasks inside a task list
+        """
+
+        # Don't want to fetch all tasks for all tasklists
+        # Only fetch all tasks when a given tasklist is called, so that what's asked is what's shown only
+
+        # Steps:
+        # 1. service.tasks().list().execute() which returns [Tasks]
+        # 2. iterate and populate these [Tasks] in TaskList.all_tasks dictionary (key: task_id , value: Task())
+        # 3. call TaskList.list_all_tasks() to print all tasks
+        try:
+            # Fetch all tasks from the API
+            response = self.task_service.tasks().list(tasklist=tasklist).execute()
+            api_tasks = response.get('items', [])
+
+            # Find tasks that are not in the dictionary (missing tasks)
+            missing_tasks = [
+                task for task in api_tasks if task['id'] not in tasklist.all_tasks]
+
+            # Add missing tasks to the all_tasks dictionary
+            for task_data in missing_tasks:
+                task_id = task_data['id']
+                task_title = task_data['title']
+                # Assuming Task class takes id and title as parameters
+                task = Task(task_id, task_title)
+                tasklist.all_tasks[task_id] = task
+
+        except HttpError as http_err:
+            print(f"Failed to retrieve tasks: {http_err}")
+
+    def show_tasks_in_tasklist(self, refresh, tasklist: TaskList):
+        """
+        Refresh/Fetch when tasks are updated or deleted for performance
+        """
+        if refresh or not tasklist.all_tasks:
+            self.refresh_missing_tasks(tasklist)
+
+        tasklist.list_all_tasks()
 
     def handle_http_error(self, http_err):
         error_content = http_err.content.decode(

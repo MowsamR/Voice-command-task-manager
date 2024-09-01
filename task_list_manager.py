@@ -40,17 +40,19 @@ class TaskListManager:
         else:
             print("Task list ID doesn't exist.")
 
-    def get_all_tasklist(self):
+    def refresh_tasklists(self):
         """
         1. Fetches all the task lists using Get API call
         2. Stores this in all_task_lists() dict
         """
         try:
-            results = self.task_list_service.tasklists().list().execute()
-            tasklists_items = results.get('items', [])
-            self.all_task_lists.clear()
+            tasklist_results = self.task_list_service.tasklists().list().execute()
+            tasklists_items = tasklist_results.get('items', [])
 
-            for tasklist in tasklists_items:
+            missing_tasklists = [
+                task for task in tasklists_items if task['id'] not in self.all_task_lists]
+
+            for tasklist in missing_tasklists:
                 tasklist_ID = tasklist["id"]
                 tasklist_title = tasklist["title"]
                 tl = TaskList(tasklist_title, tasklist_ID)
@@ -59,58 +61,26 @@ class TaskListManager:
         except HttpError as http_err:
             self.handle_http_error(http_err)
 
+    def show_tasklists(self, refresh=False):
+        """
+        Show all task lists. If refresh is True, update the list with the latest task lists from the API.
+        """
+        if refresh or not self.all_task_lists:
+            self.refresh_tasklists()
+        self.print_tasklists()
+
     def print_tasklists(self):
         print(ps.divider)
         print("***LIST ALL TASK LIST***")
         print(ps.divider + ps.newline)
-        counter = 1
-        for tasklist in self.all_task_lists.values():
-            print(f"{counter}. {tasklist.tl_title} --- {tasklist.tl_id}")
-            counter += 1
-        print(ps.newline + ps.divider + ps.newline)
-
-    # CHANGE this to match Task list details not task details that's copied from there.
-    def get_details(self, action: str):
-        """
-        Get the details required depending on the specific action called.
-        """
-        match action:
-            case "c":
-                tl_title = input("Enter task list title: ")
-                return self.create_tasklist(tl_title)
-
-            case "g":
-                self.print_tasklists()
-                task_list_id = input("Enter Task List ID: ")
-                return self.get_tasklist(task_list_id)
-
-            case "d":
-                # delete
-                # if success return print("successfully deleted task")
-                pass
-
-            case "p":
-                self.print_tasklists()
-
-    def get_task_list_action(self):
-        '''
-        Get the action (Task List: Create, Get, Delete)
-        '''
-        print(ps.divider)
-        print("***GET TASK LIST ACTION***")
-        print(ps.divider + ps.newline)
-
-        print(
-            f"1. Create task list (type 'c'){ps.newline}2. Get task list (type 'g'){ps.newline}3. Delete task list(type 'd'){ps.newline}4. Print all task lists(type 'p'){ps.newline*2}* Enter your action: ")
-        print(ps.newline + ps.divider)
-
-        user_action = input().strip()
-
-        if user_action in ['c', 'g', 'd', 'p']:
-            return user_action
+        if not self.all_task_lists:
+            print("There are 0 tasklists to view.")
         else:
-            print("Invalid action. Please try again.")
-            return self.get_task_list_action()
+            counter = 1
+            for tasklist in self.all_task_lists.values():
+                print(f"{counter}. {tasklist.tl_title} --- {tasklist.tl_id}")
+                counter += 1
+            print(ps.newline + ps.divider + ps.newline)
 
     def handle_http_error(self, http_err):
         error_content = http_err.content.decode(

@@ -24,4 +24,10 @@ class TaskList:
         '''
         Print all tasks under this task list.
         '''
-        pass
+        if not self.all_tasks:
+            print("No tasks in this task list.")
+        else:
+            counter = 1
+            for task_id, task in self.all_tasks.items():
+                print(f"{counter}. {task.title}   |   Due Date: {task.due_date}")
+                counter += 1
